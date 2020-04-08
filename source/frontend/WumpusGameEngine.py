@@ -263,6 +263,7 @@ def getPollingResults():
 
 def polling():
     while True:
+        global moveCount
         time.sleep(1)
 
         #TODO call server API to get polling results
@@ -270,20 +271,30 @@ def polling():
         #result = getPollingResults()
         #if (len(result) > 0):
         #   executeMove(command)
+        #   moveCount += 1
         #   displayRoomInfo()
 
         now = datetime.datetime.now()
         seconds = now.strftime("%S")
         if (int(seconds) % 10 == 0):
-            result = "M 1"
+            room =Player.location
+            connects = room.get_connects()
+            randomConnect = random.choice(connects)
+            result = "M " + str(randomConnect)
+            print ("Executing move " + str(moveCount))
             executeMove(result)
+            moveCount += 1
             displayRoomInfo()
 
 # ============ BEGIN HERE ===========
+moveCount = 1
 
+#seed so that everyone has same random map
+random.seed(1000)
+
+#create therad for polling and game execution
 threading._start_new_thread(polling)
 
-voteCount = 0
 Cave = []
 create_cave()
 
