@@ -11,6 +11,7 @@ import sys
 import threading
 import time
 import datetime
+import signal
 
 def show_instructions():
     print ("""
@@ -169,70 +170,7 @@ def create_cave():
             room.add_connect(Cave[idx +10].number) #I connect to it.
             Cave[idx +10].add_connect(room.number) #It connects to me.
 
-def sendVote():
-    return True
-
-def poll():
-    global voteCount
-    voteCount += 1
-    if (voteCount >= 2):
-        voteCount = 0
-        print ("Time is up! Executing move")
-        return True
-    else:
-        print ("Waiting for move...")
-        return False
-
-# ============ BEGIN HERE ===========
-
-
-voteCount = 0
-Cave = []
-create_cave()
-
-# Make player, wumpus, bats, pits and put into cave.
-
-Wumpus, Player, Pit1, Pit2, Bats1, Bats2 = create_things(Cave)
-
-Arrows = 5
-
-# Now play the game
-
-print("""\n   Welcome to the cave, Great White Hunter.
-    You are hunting the Wumpus.
-    On any turn you can move or shoot.
-    Commands are entered in the form of ACTION LOCATION
-    IE: 'SHOOT 12' or 'MOVE 8'
-    type 'HELP' for instructions.
-    'QUIT' to end the game.
-    """)
-
-while True:
-
-    Player.location.describe()
-    #Check each <Player.location.connects_to> for hazards.
-    for room in Player.location.connects_to:
-        if Wumpus.location.number == room:
-            print("I smell a Wumpus!")
-        if Pit1.location.number == room or Pit2.location.number == room:
-            print("I feel a draft!")
-        if Bats1.location.number == room or Bats2.location.number == room:
-            print("Bats nearby!")
-    
-
-    while True:
-        makeMove = poll()
-        if (makeMove):
-            break
-
-        # input here
-        raw_command = input("\n> ")
-
-        #send raw_command to server to post vote
-        sendVote(raw_command)
-        
-        
-    #raw_command = input("\n> ")
+def executeMove(raw_command):
     command_list = raw_command.split(' ')
     command = command_list[0].upper()
     if len(command_list) > 1:
@@ -240,13 +178,13 @@ while True:
             move = Cave[int(command_list[1]) -1]
         except:
             print("\n **What??")
-            continue
+            return
     else:
         move = Player.location
 
     if command == 'HELP' or command == 'H':
         show_instructions()
-        continue
+        return
 
     elif command == 'QUIT' or command == 'Q':
         print("\nOK, Bye.")
@@ -259,7 +197,7 @@ while True:
                 Wumpus.wakeup(Cave)
         else:
             print("\n **You can't get there from here")
-            continue
+            return
 
     elif command == 'SHOOT' or command == 'S':
         if Player.validate_move(move):
@@ -282,7 +220,7 @@ while True:
     
     else:
         print("\n **What?")
-        continue
+        return
 
     # By now the player has moved. See what happened.
     # Handle problems with pits, bats and wumpus.
@@ -304,5 +242,77 @@ while True:
         sys.exit()    
 
     else: # Keep playing
-        pass        
+        pass   
+
+def displayRoomInfo():
+    Player.location.describe()
+    #Check each <Player.location.connects_to> for hazards.
+    for room in Player.location.connects_to:
+        if Wumpus.location.number == room:
+            print("I smell a Wumpus!")
+        if Pit1.location.number == room or Pit2.location.number == room:
+            print("I feel a draft!")
+        if Bats1.location.number == room or Bats2.location.number == room:
+            print("Bats nearby!")
+
+def sendVote(command):
+    return True
+
+def getPollingResults():
+    return True
+
+def polling():
+    while True:
+        time.sleep(1)
+
+        #TODO call server API to get polling results
+
+        #result = getPollingResults()
+        #if (len(result) > 0):
+        #   executeMove(command)
+        #   displayRoomInfo()
+
+        now = datetime.datetime.now()
+        seconds = now.strftime("%S")
+        if (int(seconds) % 10 == 0):
+            result = "M 1"
+            executeMove(result)
+            displayRoomInfo()
+
+# ============ BEGIN HERE ===========
+
+threading._start_new_thread(polling)
+
+voteCount = 0
+Cave = []
+create_cave()
+
+# Make player, wumpus, bats, pits and put into cave.
+
+Wumpus, Player, Pit1, Pit2, Bats1, Bats2 = create_things(Cave)
+
+Arrows = 5
+
+# Now play the game
+
+print("""\n   Welcome to the cave, Great White Hunter.
+    You are hunting the Wumpus.
+    On any turn you can move or shoot.
+    Commands are entered in the form of ACTION LOCATION
+    IE: 'SHOOT 12' or 'MOVE 8'
+    type 'HELP' for instructions.
+    'QUIT' to end the game.
+    """)
+
+displayRoomInfo()
+
+while True:
+    # input here
+    command = input("\n> ")
+
+    #send command to server to post vote
+    sendVote(command)
+        
+        
+         
     
