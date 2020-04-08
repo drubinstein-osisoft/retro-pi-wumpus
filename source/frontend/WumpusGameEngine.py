@@ -255,10 +255,10 @@ def displayRoomInfo():
         if Bats1.location.number == room or Bats2.location.number == room:
             print("Bats nearby!")
 
-def sendVote(command):
+def sendVote(command, moveCount):
     return True
 
-def getPollingResults():
+def getPollingResults(moveCount):
     return True
 
 def polling():
@@ -268,12 +268,14 @@ def polling():
 
         #TODO call server API to get polling results
 
-        #result = getPollingResults()
+        #result = getPollingResults(moveCount)
         #if (len(result) > 0):
         #   executeMove(command)
         #   moveCount += 1
         #   displayRoomInfo()
+        #   print("\n> ");
 
+        #this code is temporary until we have API calls in place
         now = datetime.datetime.now()
         seconds = now.strftime("%S")
         if (int(seconds) % 10 == 0):
@@ -285,6 +287,7 @@ def polling():
             executeMove(result)
             moveCount += 1
             displayRoomInfo()
+            print("\n> ");
 
 # ============ BEGIN HERE ===========
 moveCount = 1
@@ -322,7 +325,7 @@ while True:
     command = input("\n> ")
 
     #send command to server to post vote
-    sendVote(command)
+    sendVote(command, moveCount)
         
         
          
